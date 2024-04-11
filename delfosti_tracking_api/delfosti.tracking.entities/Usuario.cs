@@ -26,5 +26,8 @@ namespace delfosti.tracking.entities
         public String Puesto { get; set; }
         public String Rol { get; set; }
 
+        public String token { get; set; }   
+        public String respuesta { get; set; }
+
     }
 }

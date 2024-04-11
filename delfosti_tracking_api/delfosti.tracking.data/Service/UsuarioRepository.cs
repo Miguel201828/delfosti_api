@@ -41,23 +41,54 @@ namespace delfosti.tracking.data.Service
             throw new NotImplementedException();
         }
 
+        public async Task<LoginSession> GrabarToken(LoginSession obj)
+        {
+            try
+            {
+                var conn = Connection;
+                conn.Open();
+                SqlCommand cmd = new SqlCommand("SP_GUARDAR_TOKEN_USUARIO", conn);
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.Add("@codigo_usuario", SqlDbType.VarChar).Value = obj.codigo_trabajador;
+                cmd.Parameters.Add("@token_desc", SqlDbType.VarChar).Value = obj.token;
+                rdr = await cmd.ExecuteReaderAsync();
+                while (rdr.Read())
+                {
+                    obj.respuesta = rdr.GetString(0);
+                }
+                conn.Close();
+            }
+            catch (Exception ex)
+            {
+                obj.respuesta = ex.Message;
+            }
+            finally
+            {
+                if (Connection.State != ConnectionState.Closed) Connection.Close();
+            }
+
+            return obj;
+        }
+
         public Task<bool> Insert(Usuario entity)
         {
             throw new NotImplementedException();
         }
 
-        public LoginSession ObtenerDatosSession(String correo, String clave)
+        public async Task<LoginSession> ObtenerDatosSession(String correo, String clave)
         {
             LoginSession retorna = new LoginSession();
             try
             {
-                Connection.Open();
+                var conn = Connection;
 
-                SqlCommand cmd = new SqlCommand("sp_login", Connection);
+                conn.Open();
+
+                SqlCommand cmd = new SqlCommand("sp_login", conn);
                 cmd.CommandType = CommandType.StoredProcedure;
                 cmd.Parameters.Add("@correo", SqlDbType.VarChar).Value = correo;
                 cmd.Parameters.Add("@clave", SqlDbType.VarChar).Value = clave;
-                rdr = cmd.ExecuteReader();
+                rdr = await cmd.ExecuteReaderAsync();
                 while (rdr.Read())
                 {
                     retorna.codigo_trabajador = rdr.GetString(0);
@@ -68,6 +99,7 @@ namespace delfosti.tracking.data.Service
                     retorna.Puesto = rdr.GetString(5);
                     retorna.Rol = rdr.GetString(6);
                 }
+                conn.Close();
             }
             catch (Exception ex)
             {
@@ -79,6 +111,38 @@ namespace delfosti.tracking.data.Service
             }
 
             return retorna;
+        }
+
+        public async Task<Boolean> PuedeAcceder(String codigo, String token)
+        {
+            Boolean retorna = false;
+            try
+            {
+                var conn = Connection;
+
+                conn.Open();
+
+                SqlCommand cmd = new SqlCommand("SP_VALIDAR_TOKEN_USER", conn);
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.Add("@codigo_usuario", SqlDbType.VarChar).Value = codigo;
+                cmd.Parameters.Add("@token_desc", SqlDbType.VarChar).Value = token;
+                rdr = await cmd.ExecuteReaderAsync();
+                while (rdr.Read())
+                {
+                    retorna = rdr.GetBoolean(0);
+                }
+                conn.Close();
+            }
+            catch (Exception ex)
+            {
+                retorna = false;
+            }
+            finally
+            {
+                if (Connection.State != ConnectionState.Closed) Connection.Close();
+            }
+            return retorna;
+
         }
 
         public Task<bool> Update(Usuario entity)

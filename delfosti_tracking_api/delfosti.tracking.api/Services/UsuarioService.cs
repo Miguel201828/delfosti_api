@@ -33,16 +33,48 @@ namespace delfosti.tracking.api.Services
             throw new NotImplementedException();
         }
 
-        public Task Insert(Usuario entidad)
+        public Task<bool> Insert(Usuario entidad)
         {
             throw new NotImplementedException();
         }
 
-        public LoginSession ObtenerDatosSession(String correo, String clave)
+        public async Task<LoginSession> ObtenerDatosSession(String correo, String clave)
         {
-            var retorna = _usuarioRepository.ObtenerDatosSession(correo, clave);
+            var retorna = (LoginSession) await _usuarioRepository.ObtenerDatosSession(correo, clave);
+
+            if (retorna != null)
+            {
+                if(retorna.nombre.Length > 0)
+                {
+                    var claveSecreta = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JWT:SecretKey"]));
+                    var credenciales = new SigningCredentials(claveSecreta, SecurityAlgorithms.HmacSha256);
+
+                    var claims = new[]
+                    {
+                        new Claim(JwtRegisteredClaimNames.Sub, retorna.nombre),
+                        new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+                    };
+                    var token = new JwtSecurityToken(
+                        issuer: _configuration["JWT:Issuer"],
+                        audience: _configuration["JWT:Audience"],
+                        claims: claims,
+                        expires: DateTime.UtcNow.AddHours(1),
+                        signingCredentials: credenciales
+                    );
+                    retorna.token = new JwtSecurityTokenHandler().WriteToken(token);
+                }
+            }
+            if (retorna.token.Length> 0)
+            {
+                retorna = (LoginSession)await _usuarioRepository.GrabarToken(retorna);
+            }
 
             return retorna;
+        }
+
+        public async Task<Boolean> PuedeAcceder(String codigo, String token)
+        {
+            return (Boolean) await _usuarioRepository.PuedeAcceder(codigo, token);
         }
 
         public Task Update(int id, Usuario entidad)

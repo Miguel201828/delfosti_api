@@ -1,6 +1,8 @@
 ﻿using delfosti.tracking.api.Interfaces;
+using delfosti.tracking.entities;
 using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
+
 
 namespace delfosti.tracking.api.Controllers
 {
@@ -20,12 +22,16 @@ namespace delfosti.tracking.api.Controllers
         public async Task<IActionResult> Login(String correo, String clave)
         {
 
-            var usuario = _usuarioService.ObtenerDatosSession(correo, clave);
+            var usuario = (LoginSession) await _usuarioService.ObtenerDatosSession(correo, clave);
 
             if (usuario == null)
             {
                 //return Unauthorized();
-                return BadRequest(new { message = "Credenciales invalidas" });
+                return BadRequest(new { message = "Error buscando al usuario" });
+            }
+            if(usuario.nombre == null)
+            {
+                return NotFound(new { message = "No se encontro el usuario, revise sus credenciales" });
             }
 
             return Ok(usuario);

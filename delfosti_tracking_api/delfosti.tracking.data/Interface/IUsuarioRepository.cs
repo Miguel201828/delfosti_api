@@ -10,6 +10,8 @@ namespace delfosti.tracking.data.Interface
 {
     public interface IUsuarioRepository : IGenericRepository<Usuario>
     {
-        LoginSession ObtenerDatosSession(String correo, String clave);
+        Task<LoginSession> ObtenerDatosSession(String correo, String clave);
+        Task<LoginSession> GrabarToken(LoginSession obj);
+        Task<Boolean> PuedeAcceder(String codigo, String token);
     }
 }

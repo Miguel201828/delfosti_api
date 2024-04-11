@@ -5,6 +5,7 @@ namespace delfosti.tracking.api.Interfaces
 {
     public interface IUsuarioService: IGeneric<Usuario>
     {
-        LoginSession ObtenerDatosSession(String correo, String clave);
+        Task<LoginSession> ObtenerDatosSession(String correo, String clave);
+        Task<Boolean> PuedeAcceder(String codigo, String token);
     }
 }
